@@ -1,72 +1,51 @@
-from copy import deepcopy
+# Definición del estado inicial y estado meta
+estado_inicial = ["B", "A", "C"]
+estado_meta = ["A", "B", "C"]
 
-# Función para calcular la heurística del estado actual
-def heuristic(current_state):
+# Función para calcular la heurística
+def heuristica(estado):
+    # Cada bloque fuera de su posición meta cuenta como 1 en la heurística
     h = 0
-    for i, stack in enumerate(current_state):
-        for j, block in enumerate(stack):
-            if block != "C":
-                h += 1
-            if j > 0 and stack[j-1] != "C" and block != "C":
-                h += 1
-            if i > 0:
-                for k in range(len(current_state[i-1])):
-                    if current_state[i-1][k] != "C" and block != "C":
-                        h += 1
+    for i in range(len(estado)):
+        if estado[i] != estado_meta[i]:
+            h += 1
     return h
 
-# Estado inicial
-current = [["B", "A", "C"], [], []]
+# Función para generar vecinos
+def generar_vecinos(estado):
+    vecinos = []
+    for i in range(len(estado)):
+        for j in range(len(estado)):
+            if i != j:
+                vecino = estado.copy()
+                bloque = vecino.pop(i)
+                vecino.insert(j, bloque)
+                vecinos.append(vecino)
+    return vecinos
 
-# Estado objetivo
-goal = [["A", "B", "C"], [], []]
-
-# Número máximo de iteraciones
-max_iterations = 1000
-
-# Lista para almacenar los movimientos realizados
-moves = []
-
-# Realizar búsqueda por ascenso de colinas
-for i in range(max_iterations):
-    # Calcular la heurística del estado actual
-    h_current = heuristic(current)
-    
-    # Si el estado actual es el objetivo, detener la búsqueda
-    if current == goal:
-        print("Solución encontrada:")
-        for move in moves:
-            print(move)
-        print("Número de movimientos:", len(moves))
+# Algoritmo de ascenso de colinas con función heurística
+estado_actual = estado_inicial
+movimientos = 0
+while True:
+    h_actual = heuristica(estado_actual)
+    if h_actual == 0:
+        # Solución encontrada
+        print("Se ha encontrado la solución en", movimientos, "movimientos:")
+        print(estado_actual)
         break
-    
-    # Encontrar el mejor vecino
-    best_neighbor = None
-    best_neighbor_h = float("inf")
-    best_neighbor_index = None
-    for i, stack in enumerate(current):
-        if len(stack) > 0:
-            for j in range(len(current)):
-                if i != j:
-                    # Intentar mover el bloque superior de la pila i a la pila j
-                    neighbor = deepcopy(current)
-                    block = neighbor[i].pop()
-                    neighbor[j].append(block)
-                    
-                    # Calcular la heurística del vecino
-                    h_neighbor = heuristic(neighbor)
-                    
-                    # Si el vecino es mejor que el mejor vecino encontrado hasta ahora, actualizar
-                    if h_neighbor < best_neighbor_h:
-                        best_neighbor = neighbor
-                        best_neighbor_h = h_neighbor
-                        best_neighbor_index = j
-    
-    # Si no se encontró un mejor vecino, detener la búsqueda
-    if best_neighbor_h >= h_current:
-        print("Se alcanzó un máximo local.")
+    vecinos = generar_vecinos(estado_actual)
+    mejor_vecino = None
+    mejor_h = h_actual
+    for vecino in vecinos:
+        h_vecino = heuristica(vecino)
+        if h_vecino < mejor_h:
+            mejor_vecino = vecino
+            mejor_h = h_vecino
+    if mejor_vecino is None:
+        # Estancamiento en óptimo local
+        print("Se ha llegado a un óptimo local en", movimientos, "movimientos:")
+        print(estado_actual)
         break
-    
-    # Realizar el movimiento al mejor vecino encontrado
-    moves.append(f"Move block {current[best_neighbor_index][-1]} from stack {current.index(current[best_neighbor_index])+1} to stack {best_neighbor_index+1}")
-    current = best_neighbor
+    estado_actual = mejor_vecino
+    movimientos += 1
+    print("Movimiento", movimientos, ":", estado_actual)
